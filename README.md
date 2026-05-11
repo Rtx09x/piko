@@ -1,109 +1,69 @@
 # Piko
 
-Piko is a tiny AI focus companion for Chrome. It watches consented browser activity locally, keeps a current goal, and gives occasional gentle nudges through a small page overlay. Chat is Gemini API based.
+Piko is a tiny focus companion for Chrome.
 
-## Why Piko Exists
+Set a goal, browse normally, and Piko gives gentle nudges when your tabs start drifting away from what you meant to do.
 
-Piko is Clippy with taste and consent: small, cute, dismissible, and focused on helping you notice attention drift without turning productivity into guilt.
+## Features
 
-## What is implemented
+- Goal-based focus nudges
+- Small page overlay
+- Gemini-powered chat
+- Local browser activity context
+- Sleep and wake controls
+- Optional recent history import
+- Allowed and blocked domain controls
+- Local-first settings and activity storage
 
-- Chrome Manifest V3 extension.
-- Local activity tracking from browser tabs: title, domain, time spent, tab switching.
-- Optional rough browser-history import for the last six hours, only after Chrome History permission is granted.
-- Privacy controls for allowed domains, blocked domains, and URL storage.
-- `/goal` command in chat and a dedicated goal input.
-- Variable nudge timing with gentle, balanced, and active modes.
-- Gemini REST integration through `x-goog-api-key`.
-- Fallback non-AI nudges if no Gemini key is present.
-- Content-page Piko overlay with dismiss and quiet controls.
-- Popup dashboard with goal, recent activity summary, and chat.
-- Options page for Gemini and privacy settings.
-- Extension icons and a privacy policy draft for store submission.
+## Install
 
-## Screens
+Download the latest ZIP from [Releases](https://github.com/Rtx09x/piko/releases), then load it in Chrome:
 
-- Popup: goal, sleep controls, recent context, and chat.
-- Options: Gemini API key, nudge mode, privacy controls, and optional history import.
-- Overlay: a small Piko nudge on normal web pages.
+1. Open `chrome://extensions`
+2. Turn on `Developer mode`
+3. Click `Load unpacked`
+4. Select the unzipped Piko folder
 
-## Install locally
+## Gemini
 
-1. Open Chrome.
-2. Go to `chrome://extensions`.
-3. Enable `Developer mode`.
-4. Click `Load unpacked`.
-5. Select this folder:
+Piko uses your own Gemini API key.
+
+Open Piko settings, paste the key, and save. The default model is:
 
 ```text
-C:\Users\ByteMyBootloader\Documents\Codex\2026-05-12\i-have-a-very-small-but
+gemini-2.5-flash
 ```
 
-## Store packaging
-
-Package the extension root into a ZIP before uploading to the Chrome Web Store. Do not include unrelated scratch files.
-
-The current release package is generated as:
-
-```text
-dist/piko-0.1.0.zip
-```
-
-## Gemini setup
-
-1. Open Piko settings from the extension popup.
-2. Paste a Gemini API key.
-3. Keep the default model `gemini-2.5-flash` unless you want to test another Gemini model.
-4. Save settings.
-
-Piko calls:
-
-```text
-https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent
-```
-
-with the `x-goog-api-key` header.
+Without a Gemini key, Piko can still show simple fallback nudges.
 
 ## Commands
 
-Use these inside the popup chat:
+Use these in Piko chat:
 
 ```text
-/goal finish the Piko MVP
+/goal write the report
 /goal
 /sleep
 /sleep 20
 /wake
-/pause
-/resume
 ```
 
-## Privacy model
+## Privacy
 
-Piko does not keylog and does not read full page text. V1 only uses browser tab signals.
+Piko does not keylog and does not read full page text.
 
-By default it stores:
+By default, Piko stores local browser context such as:
 
-- page titles,
-- domains,
-- visit duration,
-- tab switch pattern.
+- page titles
+- domains
+- visit duration
+- tab switching
 
-URLs are only stored if you change the privacy setting to `Titles, domains, and URLs`.
+Full URLs are stored only if you enable URL storage in settings.
 
-The optional browser-history import is off by default. It asks for Chrome History permission only when you click `Import recent browser history`.
+Recent browser history import is optional and only runs after you grant Chrome History permission.
 
-## Current limits
-
-- Whole-PC history is not included yet. That requires a native desktop companion app.
-- Chrome system pages cannot show the overlay.
-- The API key is stored in Chrome local extension storage, which is acceptable for a local prototype but not a final multi-user cloud product.
-
-## Suggested next build
-
-1. Add a native companion app only after the browser nudge loop feels useful.
-2. Add provider abstraction later: Gemini first, then OpenAI/Anthropic/local.
-3. Add a stronger permission screen before any Web Store release.
+See [PRIVACY.md](./PRIVACY.md) for the full policy.
 
 ## License
 
