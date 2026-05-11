@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 - 2026-05-12
+
+- Added a three-slot active goal stack.
+- Added goal commands: `/goals`, `/focus slot`, `/done slot`, and `/drop slot`.
+- Added popup goal list with focus and done actions.
+- Added migration from the old single active goal setting.
+- Updated nudge and chat context to include all active goals and the primary goal.
+
 ## 0.2.0 - 2026-05-12
 
 - Added finite local memory with compaction.

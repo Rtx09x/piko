@@ -1,16 +1,19 @@
-# Release Notes: Piko 0.2.0
+# Release Notes: Piko 0.3.0
 
-Piko 0.2.0 adds the first persistent companion layer.
+Piko 0.3.0 adds a lightweight three-goal focus stack.
 
 ## Highlights
 
 - Set a goal and keep it visible in the popup.
+- Keep up to three active goals at once.
+- Focus, complete, and drop goals from chat or the popup.
 - Chat with Piko using Gemini.
 - Receive gentle browser nudges based on tab switching, likely distraction loops, and active goal age.
 - Store finite local memory that compacts when it gets full.
 - Personalize your name, preferences, tone, and Piko's personality.
 - Give nudge feedback so Piko can learn what helps and what feels like too much.
 - Use companion commands: `/done`, `/remember`, `/think`, `/idea`, and `/search`.
+- Use goal commands: `/goals`, `/focus 2`, `/done 1`, and `/drop 3`.
 - Put Piko to sleep for 20 minutes, 1 hour, or with `/sleep`.
 - Wake Piko with `/wake`.
 - Keep data local by default.

@@ -194,6 +194,7 @@ p {
 }
 
 .goal-panel,
+.goals-panel,
 .chat-panel,
 .settings-section,
 .sleep-panel,
@@ -214,6 +215,46 @@ p {
 
 .goal-panel p {
   margin-top: 7px;
+}
+
+.goal-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.goal-empty {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.goal-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: #ffffff;
+}
+
+.goal-item strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.goal-item span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.goal-actions {
+  display: flex;
+  gap: 4px;
 }
 
 .sleep-panel {

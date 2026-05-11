@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Piko",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A tiny AI focus companion that gives gentle browser nudges around your current goal.",
   "icons": {
     "16": "icons/piko-16.png",

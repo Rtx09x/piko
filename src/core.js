@@ -176,11 +176,12 @@ export function summarizeActivity(activity, spanMinutes = 45) {
   };
 }
 
-export function selectNudgeCandidate(settings, state, activity) {
+export function selectNudgeCandidate(settings, state, activity, goalsContext = null) {
   const time = now();
   if (!settings.enabled) return null;
   if (settings.quietUntil && settings.quietUntil > time) return null;
-  if (!settings.currentGoal.trim()) return null;
+  const activeGoal = goalsContext?.primary?.title || settings.currentGoal;
+  if (!`${activeGoal || ""}`.trim()) return null;
 
   const minGap = settings.nudgeMode === "gentle" ? 45 : settings.nudgeMode === "active" ? 12 : 25;
   const jitter = Math.floor(Math.random() * 9);
@@ -221,7 +222,7 @@ export function selectNudgeCandidate(settings, state, activity) {
   return null;
 }
 
-export function buildContext(settings, state, activity, memory = null) {
+export function buildContext(settings, state, activity, memory = null, goalsContext = null) {
   const summary = summarizeActivity(activity, 50);
   const lastItems = summary.recent.slice(-8).map((item) => ({
     title: item.title,
@@ -231,7 +232,8 @@ export function buildContext(settings, state, activity, memory = null) {
   }));
 
   return {
-    goal: settings.currentGoal || "No goal set",
+    goal: goalsContext?.primary?.title || settings.currentGoal || "No goal set",
+    goals: goalsContext?.active || [],
     current: {
       title: state.activeTitle || "",
       domain: domainFromUrl(state.activeUrl),
@@ -308,14 +310,15 @@ export async function callGemini({ apiKey, model, text, temperature = 0.7, maxOu
   return result;
 }
 
-export function buildNudgePrompt(candidate, settings, state, activity, memory = null) {
-  const context = buildContext(settings, state, activity, memory);
+export function buildNudgePrompt(candidate, settings, state, activity, memory = null, goalsContext = null) {
+  const context = buildContext(settings, state, activity, memory, goalsContext);
   return [
     "You are Piko, a tiny browser focus companion.",
     "Write exactly one gentle nudge under 24 words.",
     "Do not guilt the user. Do not mention private surveillance. Be cute, useful, and easy to dismiss.",
     "If the context suggests productive research, make the nudge extra gentle or suggest continuing.",
     `Goal: ${context.goal}`,
+    `Active goals: ${JSON.stringify(context.goals)}`,
     `Current tab: ${context.current.title} on ${context.current.domain}`,
     `Recent summary: ${JSON.stringify(context.summary)}`,
     `Trigger: ${candidate.reason}`,
@@ -323,12 +326,12 @@ export function buildNudgePrompt(candidate, settings, state, activity, memory = 
   ].join("\n");
 }
 
-export function buildChatPrompt(message, settings, state, activity, memory = null) {
-  const context = buildContext(settings, state, activity, memory);
+export function buildChatPrompt(message, settings, state, activity, memory = null, goalsContext = null) {
+  const context = buildContext(settings, state, activity, memory, goalsContext);
   return [
     "You are Piko, a tiny AI focus companion inside a browser extension.",
     "Answer briefly and practically. Use the user's browser context only to help them refocus.",
-    "Supported commands are /goal, /goal text, /done, /sleep, /sleep minutes, /wake, /remember text, /think text, /idea text, and /search text.",
+    "Supported commands are /goal, /goal text, /goals, /focus slot, /done slot, /drop slot, /sleep, /sleep minutes, /wake, /remember text, /think text, /idea text, and /search text.",
     "If they ask for a plan, give 1-3 next actions.",
     "Avoid guilt, diagnosis, or pretending to know more than the browser activity shows.",
     `Context: ${JSON.stringify(context)}`,

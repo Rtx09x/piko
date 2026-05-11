@@ -6,6 +6,7 @@ Set a goal, browse normally, and Piko gives gentle nudges when your tabs start d
 
 ## Features
 
+- Three active goals with a primary focus
 - Goal-based focus nudges
 - Small page overlay
 - Gemini-powered chat
@@ -45,6 +46,11 @@ Use these in Piko chat:
 
 ```text
 /goal write the report
+/goal research UI components
+/goals
+/focus 2
+/done 1
+/drop 3
 /goal
 /sleep
 /sleep 20

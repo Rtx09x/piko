@@ -3,6 +3,8 @@ import { minutes, summarizeActivity } from "./core.js";
 const goalInput = document.querySelector("#goalInput");
 const saveGoal = document.querySelector("#saveGoal");
 const goalMeta = document.querySelector("#goalMeta");
+const goalList = document.querySelector("#goalList");
+const refreshGoals = document.querySelector("#refreshGoals");
 const focusMinutes = document.querySelector("#focusMinutes");
 const switchCount = document.querySelector("#switchCount");
 const topDomain = document.querySelector("#topDomain");
@@ -22,6 +24,7 @@ let dashboard = null;
 
 saveGoal.addEventListener("click", async () => {
   await send({ type: "PIKO_SET_GOAL", goal: goalInput.value });
+  goalInput.value = "";
   await refresh();
 });
 
@@ -57,6 +60,14 @@ openOptions.addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
 });
 
+refreshGoals.addEventListener("click", refresh);
+goalList.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-command]");
+  if (!button) return;
+  await send({ type: "PIKO_CHAT", text: button.dataset.command });
+  await refresh();
+});
+
 refresh();
 
 async function refresh() {
@@ -66,7 +77,7 @@ async function refresh() {
 }
 
 function render(data) {
-  const { settings, activity, chat } = data;
+  const { settings, activity, chat, goals } = data;
   const summary = summarizeActivity(activity, 50);
   goalInput.value = settings.currentGoal || "";
   goalMeta.textContent = settings.currentGoal
@@ -77,6 +88,7 @@ function render(data) {
   topDomain.textContent = summary.topDomains[0]?.domain || "none";
   apiStatus.textContent = settings.apiKey ? `${settings.model} connected` : "Gemini key not set";
   renderSleep(settings);
+  renderGoals(goals || []);
   renderChat(chat);
 }
 
@@ -115,6 +127,34 @@ function renderChat(chat) {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+function renderGoals(goals) {
+  const active = goals.filter((goal) => goal.status === "active").sort((a, b) => a.slot - b.slot);
+  goalList.innerHTML = "";
+  if (!active.length) {
+    const empty = document.createElement("p");
+    empty.className = "goal-empty";
+    empty.textContent = "No active goals. Add up to 3.";
+    goalList.appendChild(empty);
+    return;
+  }
+
+  for (const goal of active) {
+    const row = document.createElement("div");
+    row.className = "goal-item";
+    row.innerHTML = `
+      <div>
+        <strong>${goal.slot}. ${escapeHtml(goal.title)}</strong>
+        <span>${goal.primary ? "Primary" : "Active"}</span>
+      </div>
+      <div class="goal-actions">
+        <button class="text-button" type="button" data-command="/focus ${goal.slot}">Focus</button>
+        <button class="text-button" type="button" data-command="/done ${goal.slot}">Done</button>
+      </div>
+    `;
+    goalList.appendChild(row);
+  }
+}
+
 function appendMessage(role, text) {
   const message = document.createElement("div");
   message.className = `message ${role}`;
@@ -125,4 +165,14 @@ function appendMessage(role, text) {
 
 function send(message) {
   return chrome.runtime.sendMessage(message);
+}
+
+function escapeHtml(value) {
+  return `${value || ""}`.replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  })[char]);
 }

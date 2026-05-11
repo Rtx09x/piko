@@ -1,11 +1,12 @@
 import { DISTRACTION_HINTS, domainFromUrl, minutes, summarizeActivity } from "./core.js";
 import { memorySnapshot, moodFromSignals } from "./memory.js";
 
-export function buildCompanionContext(settings, state, activity, memory) {
+export function buildCompanionContext(settings, state, activity, memory, goals = null) {
   const summary = summarizeActivity(activity, 60);
   const currentDomain = domainFromUrl(state.activeUrl);
   return {
-    goal: settings.currentGoal || "",
+    goal: goals?.primary?.title || settings.currentGoal || "",
+    goals: goals?.active || [],
     tone: memory.profile.tone || "gentle",
     user: {
       name: memory.profile.name || "",

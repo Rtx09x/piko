@@ -13,6 +13,15 @@ import {
   updateMemory
 } from "./memory.js";
 import {
+  addGoal,
+  completeGoal,
+  dropGoal,
+  focusGoal,
+  getGoals,
+  goalsContext,
+  goalsSummary
+} from "./goals.js";
+import {
   addActivityEvent,
   buildChatPrompt,
   buildNudgePrompt,
@@ -36,12 +45,13 @@ import {
 const ALARM_NAME = "piko-nudge-tick";
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const stored = await chrome.storage.local.get(["settings", "state", "activity", "chat", "memory"]);
+  const stored = await chrome.storage.local.get(["settings", "state", "activity", "chat", "memory", "goals"]);
   if (!stored.settings) await writeStorage({ settings: DEFAULT_SETTINGS });
   if (!stored.state) await writeStorage({ state: DEFAULT_STATE });
   if (!stored.activity) await writeStorage({ activity: [] });
   if (!stored.chat) await writeStorage({ chat: [] });
   if (!stored.memory) await getMemory();
+  if (!stored.goals) await getGoals(stored.settings || DEFAULT_SETTINGS);
   chrome.alarms.create(ALARM_NAME, { delayInMinutes: 1, periodInMinutes: 3 });
 });
 
@@ -138,20 +148,22 @@ async function tickNudge() {
   await closeActiveEvent();
   const activity = await getActivity();
   const memory = await getMemory();
+  const goals = await getGoals(settings);
+  const goalContext = goalsContext(goals);
 
-  const candidate = selectNudgeCandidate(settings, state, activity);
+  const candidate = selectNudgeCandidate(settings, state, activity, goalContext);
   if (!candidate) return;
 
   let text = fallbackNudge(candidate, settings);
   if (settings.aiNudges && settings.apiKey) {
     try {
-      const companionContext = buildCompanionContext(settings, state, activity, memory);
+      const companionContext = buildCompanionContext(settings, state, activity, memory, goalContext);
       text = await callGemini({
         apiKey: settings.apiKey,
         model: settings.model,
         text: settings.companionMode
           ? buildCompanionNudgePrompt(candidate, companionContext)
-          : buildNudgePrompt(candidate, settings, state, activity, memory),
+          : buildNudgePrompt(candidate, settings, state, activity, memory, goalContext),
         temperature: 0.85,
         maxOutputTokens: 80
       });
@@ -189,13 +201,18 @@ async function handleMessage(message) {
       chrome.storage.local.get(["chat"]),
       getMemory()
     ]);
-    return { ok: true, settings: redactSettings(settings), state, activity, chat: chatStore.chat || [], memory };
+    const goals = await getGoals(settings);
+    return { ok: true, settings: redactSettings(settings), state, activity, chat: chatStore.chat || [], memory, goals };
   }
 
   if (message.type === "PIKO_SET_GOAL") {
     const goal = `${message.goal || ""}`.trim();
-    const settings = await setSettings({ currentGoal: goal, goalUpdatedAt: goal ? now() : 0 });
-    return { ok: true, settings: redactSettings(settings) };
+    if (!goal) return { ok: false, error: "Goal is empty" };
+    const result = await addGoal(goal);
+    if (!result.ok) return { ok: false, error: "All 3 active goal slots are full.", goals: result.goals };
+    const primary = goalsContext(result.goals).primary;
+    const settings = await setSettings({ currentGoal: primary?.title || goal, goalUpdatedAt: now() });
+    return { ok: true, settings: redactSettings(settings), goals: result.goals };
   }
 
   if (message.type === "PIKO_SAVE_SETTINGS") {
@@ -264,21 +281,23 @@ async function chat(rawText) {
     return persistChatTurn(text, query ? `I opened a search for: ${query}` : "Tell me what to search after /search.");
   }
 
-  const [state, activity, memory] = await Promise.all([
+  const [state, activity, memory, goals] = await Promise.all([
     getState(),
     getActivity(),
-    getMemory()
+    getMemory(),
+    getGoals(settings)
   ]);
 
   let reply = "Set a Gemini API key in Piko settings first, then I can chat with context.";
   if (settings.apiKey) {
-    const companionContext = buildCompanionContext(settings, state, activity, memory);
+    const goalContext = goalsContext(goals);
+    const companionContext = buildCompanionContext(settings, state, activity, memory, goalContext);
     reply = await callGemini({
       apiKey: settings.apiKey,
       model: settings.model,
       text: settings.companionMode
         ? buildCompanionPrompt(toolIntent.cleaned || text, companionContext)
-        : buildChatPrompt(text, settings, state, activity, memory),
+        : buildChatPrompt(text, settings, state, activity, memory, goalContext),
       temperature: 0.55,
       maxOutputTokens: 260
     });
@@ -302,32 +321,63 @@ async function parseCommand(text) {
   const lower = text.toLowerCase();
   if (lower.startsWith("/goal ")) {
     const goal = text.slice(6).trim();
-    const settings = await setSettings({ currentGoal: goal, goalUpdatedAt: goal ? now() : 0 });
+    if (!goal) return { ok: true, reply: "Tell me the goal after /goal." };
+    const result = await addGoal(goal);
+    if (!result.ok) {
+      return { ok: true, reply: "All 3 active goal slots are full. Use /done 1 or /drop 1 first." };
+    }
+    const primary = goalsContext(result.goals).primary;
+    const settings = await setSettings({ currentGoal: primary?.title || goal, goalUpdatedAt: now() });
     return {
       ok: true,
-      reply: goal ? `Goal set: ${goal}` : "Goal cleared.",
+      reply: `Added goal ${result.goals.find((item) => item.title === goal)?.slot || ""}: ${goal}`,
       settings: redactSettings(settings)
     };
   }
 
   if (lower === "/goal") {
     const settings = await getSettings();
+    const goals = await getGoals(settings);
     return {
       ok: true,
-      reply: settings.currentGoal ? `Current goal: ${settings.currentGoal}` : "No goal set yet. Try /goal finish the report.",
+      reply: goalsSummary(goals),
       settings: redactSettings(settings)
     };
   }
 
-  if (lower === "/done") {
-    const settings = await setSettings({ currentGoal: "", goalUpdatedAt: 0 });
+  if (lower === "/goals") {
+    const goals = await getGoals(await getSettings());
+    return { ok: true, reply: goalsSummary(goals) };
+  }
+
+  if (lower.startsWith("/focus ")) {
+    const result = await focusGoal(text.slice(7).trim());
+    if (!result.ok) return { ok: true, reply: "I could not find that active goal." };
+    await setSettings({ currentGoal: result.goal.title, goalUpdatedAt: now() });
+    return { ok: true, reply: `Focused goal ${result.goal.slot}: ${result.goal.title}` };
+  }
+
+  if (lower === "/done" || lower.startsWith("/done ")) {
+    const slot = lower.startsWith("/done ") ? text.slice(6).trim() : null;
+    const result = await completeGoal(slot);
+    if (!result.ok) return { ok: true, reply: "I could not find an active goal to complete." };
+    const context = goalsContext(result.goals);
+    await setSettings({ currentGoal: context.primary?.title || "", goalUpdatedAt: context.primary ? now() : 0 });
     await updateMemory((memory) => {
       memory.stats.goalsDone += 1;
       memory.piko.mood = "proud";
       memory.piko.energy = Math.min(100, memory.piko.energy + 8);
       return memory;
     });
-    return { ok: true, reply: "Done. Piko is proud of this one.", settings: redactSettings(settings) };
+    return { ok: true, reply: `Done: ${result.goal.title}` };
+  }
+
+  if (lower.startsWith("/drop ")) {
+    const result = await dropGoal(text.slice(6).trim());
+    if (!result.ok) return { ok: true, reply: "I could not find that goal." };
+    const context = goalsContext(result.goals);
+    await setSettings({ currentGoal: context.primary?.title || "", goalUpdatedAt: context.primary ? now() : 0 });
+    return { ok: true, reply: `Dropped goal ${result.goal.slot}: ${result.goal.title}` };
   }
 
   if (lower === "/pause" || lower === "/sleep") {
