@@ -46,6 +46,38 @@
       </section>
 
       <section class="settings-section">
+        <h2>Personalization</h2>
+        <label for="userName">Your name</label>
+        <input id="userName" type="text" placeholder="Optional">
+        <label for="userNotes">About you</label>
+        <textarea id="userNotes" rows="3" placeholder="Optional context Piko should know."></textarea>
+        <label for="preferences">Preferences</label>
+        <textarea id="preferences" rows="3" placeholder="Short nudges, fewer YouTube nudges, direct tone, etc."></textarea>
+        <label for="tone">Tone</label>
+        <select id="tone">
+          <option value="gentle">Gentle</option>
+          <option value="playful">Playful</option>
+          <option value="direct">Direct</option>
+        </select>
+      </section>
+
+      <section class="settings-section">
+        <h2>Piko</h2>
+        <label for="pikoPersonality">Personality</label>
+        <textarea id="pikoPersonality" rows="3" placeholder="small, warm, lightly funny, never guilt-trippy"></textarea>
+        <label for="pikoMood">Mood</label>
+        <select id="pikoMood">
+          <option value="awake">Awake</option>
+          <option value="focused">Focused</option>
+          <option value="curious">Curious</option>
+          <option value="sleepy">Sleepy</option>
+          <option value="careful">Careful</option>
+          <option value="proud">Proud</option>
+        </select>
+        <p id="memoryMeta" class="helper">Memory is stored locally and compacted when it gets full.</p>
+      </section>
+
+      <section class="settings-section">
         <h2>Privacy</h2>
         <label for="privacyMode">Stored activity detail</label>
         <select id="privacyMode">

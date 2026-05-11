@@ -1,12 +1,16 @@
-# Release Notes: Piko 0.1.0
+# Release Notes: Piko 0.2.0
 
-Piko 0.1.0 is the first local MVP release.
+Piko 0.2.0 adds the first persistent companion layer.
 
 ## Highlights
 
 - Set a goal and keep it visible in the popup.
 - Chat with Piko using Gemini.
 - Receive gentle browser nudges based on tab switching, likely distraction loops, and active goal age.
+- Store finite local memory that compacts when it gets full.
+- Personalize your name, preferences, tone, and Piko's personality.
+- Give nudge feedback so Piko can learn what helps and what feels like too much.
+- Use companion commands: `/done`, `/remember`, `/think`, `/idea`, and `/search`.
 - Put Piko to sleep for 20 minutes, 1 hour, or with `/sleep`.
 - Wake Piko with `/wake`.
 - Keep data local by default.

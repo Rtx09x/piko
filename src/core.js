@@ -12,7 +12,8 @@ export const DEFAULT_SETTINGS = {
   lastNudgeReason: "",
   allowedDomains: [],
   blockedDomains: [],
-  keepDays: 3
+  keepDays: 3,
+  companionMode: true
 };
 
 export const DEFAULT_STATE = {
@@ -220,7 +221,7 @@ export function selectNudgeCandidate(settings, state, activity) {
   return null;
 }
 
-export function buildContext(settings, state, activity) {
+export function buildContext(settings, state, activity, memory = null) {
   const summary = summarizeActivity(activity, 50);
   const lastItems = summary.recent.slice(-8).map((item) => ({
     title: item.title,
@@ -236,6 +237,10 @@ export function buildContext(settings, state, activity) {
       domain: domainFromUrl(state.activeUrl),
       url: settings.privacyMode === "titles" ? compactUrl(state.activeUrl) : ""
     },
+    profile: memory?.profile || null,
+    piko: memory?.piko || null,
+    compactMemory: memory?.compacted || "",
+    memoryFacts: memory?.facts?.slice?.(-8)?.map((item) => item.text) || [],
     summary: {
       totalMinutes: summary.totalMinutes,
       switches: summary.switches,
@@ -303,12 +308,13 @@ export async function callGemini({ apiKey, model, text, temperature = 0.7, maxOu
   return result;
 }
 
-export function buildNudgePrompt(candidate, settings, state, activity) {
-  const context = buildContext(settings, state, activity);
+export function buildNudgePrompt(candidate, settings, state, activity, memory = null) {
+  const context = buildContext(settings, state, activity, memory);
   return [
     "You are Piko, a tiny browser focus companion.",
     "Write exactly one gentle nudge under 24 words.",
     "Do not guilt the user. Do not mention private surveillance. Be cute, useful, and easy to dismiss.",
+    "If the context suggests productive research, make the nudge extra gentle or suggest continuing.",
     `Goal: ${context.goal}`,
     `Current tab: ${context.current.title} on ${context.current.domain}`,
     `Recent summary: ${JSON.stringify(context.summary)}`,
@@ -317,12 +323,12 @@ export function buildNudgePrompt(candidate, settings, state, activity) {
   ].join("\n");
 }
 
-export function buildChatPrompt(message, settings, state, activity) {
-  const context = buildContext(settings, state, activity);
+export function buildChatPrompt(message, settings, state, activity, memory = null) {
+  const context = buildContext(settings, state, activity, memory);
   return [
     "You are Piko, a tiny AI focus companion inside a browser extension.",
     "Answer briefly and practically. Use the user's browser context only to help them refocus.",
-    "Supported commands are /goal, /goal text, /sleep, /sleep minutes, and /wake.",
+    "Supported commands are /goal, /goal text, /done, /sleep, /sleep minutes, /wake, /remember text, /think text, /idea text, and /search text.",
     "If they ask for a plan, give 1-3 next actions.",
     "Avoid guilt, diagnosis, or pretending to know more than the browser activity shows.",
     `Context: ${JSON.stringify(context)}`,

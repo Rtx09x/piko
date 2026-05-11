@@ -3,6 +3,13 @@ const model = document.querySelector("#model");
 const enabled = document.querySelector("#enabled");
 const aiNudges = document.querySelector("#aiNudges");
 const nudgeMode = document.querySelector("#nudgeMode");
+const userName = document.querySelector("#userName");
+const userNotes = document.querySelector("#userNotes");
+const preferences = document.querySelector("#preferences");
+const tone = document.querySelector("#tone");
+const pikoPersonality = document.querySelector("#pikoPersonality");
+const pikoMood = document.querySelector("#pikoMood");
+const memoryMeta = document.querySelector("#memoryMeta");
 const privacyMode = document.querySelector("#privacyMode");
 const allowedDomains = document.querySelector("#allowedDomains");
 const blockedDomains = document.querySelector("#blockedDomains");
@@ -24,6 +31,19 @@ saveSettings.addEventListener("click", async () => {
   };
   if (patch.apiKey === undefined) delete patch.apiKey;
   const response = await send({ type: "PIKO_SAVE_SETTINGS", patch });
+  const memoryPatch = {
+    profile: {
+      name: userName.value.trim(),
+      notes: userNotes.value.trim(),
+      preferences: preferences.value.trim(),
+      tone: tone.value
+    },
+    piko: {
+      personality: pikoPersonality.value.trim(),
+      mood: pikoMood.value
+    }
+  };
+  await send({ type: "PIKO_SAVE_MEMORY", patch: memoryPatch });
   saveStatus.textContent = response.ok ? "Saved." : response.error || "Save failed.";
   setTimeout(() => (saveStatus.textContent = ""), 2200);
 });
@@ -56,6 +76,7 @@ async function load() {
   }
 
   const settings = response.settings;
+  const memory = response.memory;
   apiKey.value = settings.apiKey ? "" : "";
   apiKey.placeholder = settings.apiKey ? "Saved. Paste a new key to replace it." : "Paste your Gemini API key";
   model.value = settings.model || "gemini-2.5-flash";
@@ -65,6 +86,13 @@ async function load() {
   privacyMode.value = settings.privacyMode || "titles";
   allowedDomains.value = (settings.allowedDomains || []).join("\n");
   blockedDomains.value = (settings.blockedDomains || []).join("\n");
+  userName.value = memory?.profile?.name || "";
+  userNotes.value = memory?.profile?.notes || "";
+  preferences.value = memory?.profile?.preferences || "";
+  tone.value = memory?.profile?.tone || "gentle";
+  pikoPersonality.value = memory?.piko?.personality || "";
+  pikoMood.value = memory?.piko?.mood || "awake";
+  memoryMeta.textContent = `Memory: ${(memory?.facts || []).length} active notes${memory?.compacted ? ", compacted history present" : ""}.`;
 }
 
 function lines(value) {

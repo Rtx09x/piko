@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 - 2026-05-12
+
+- Added finite local memory with compaction.
+- Added personalization fields for user name, notes, preferences, and tone.
+- Added Piko personality and mood settings.
+- Added nudge feedback buttons: good, too much, and sleep.
+- Added `/done`, `/remember`, `/think`, `/idea`, and `/search` chat flows.
+- Fixed slash-command replies not appearing in popup chat history.
+- Added companion-aware chat and nudge prompts.
+
 ## 0.1.0 - 2026-05-12
 
 Initial Piko MVP.

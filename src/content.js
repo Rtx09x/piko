@@ -15,6 +15,8 @@
         <p></p>
         <div class="piko-actions">
           <button data-action="chat" type="button">Chat</button>
+          <button data-action="helpful" type="button">Good</button>
+          <button data-action="too-much" type="button">Too much</button>
           <button data-action="quiet" type="button">Sleep 1h</button>
         </div>
       </div>
@@ -27,14 +29,27 @@
   const close = root.querySelector(".piko-close");
   const quiet = root.querySelector('[data-action="quiet"]');
   const chat = root.querySelector('[data-action="chat"]');
+  const helpful = root.querySelector('[data-action="helpful"]');
+  const tooMuch = root.querySelector('[data-action="too-much"]');
 
-  close.addEventListener("click", () => hide());
+  close.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: "PIKO_FEEDBACK", feedback: "dismissed" });
+    hide();
+  });
   quiet.addEventListener("click", () => {
     chrome.runtime.sendMessage({ type: "PIKO_QUIET", minutes: 60 });
     hide();
   });
   chat.addEventListener("click", () => {
     chrome.runtime.sendMessage({ type: "PIKO_CHAT", text: "Help me refocus in one small step." });
+    hide();
+  });
+  helpful.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: "PIKO_FEEDBACK", feedback: "helpful" });
+    hide();
+  });
+  tooMuch.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: "PIKO_FEEDBACK", feedback: "tooMuch" });
     hide();
   });
 

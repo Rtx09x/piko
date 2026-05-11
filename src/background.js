@@ -1,4 +1,18 @@
 import {
+  buildCompanionContext,
+  buildCompanionNudgePrompt,
+  buildCompanionPrompt,
+  extractMemoryText,
+  localToolReply,
+  shouldAskForMemory
+} from "./companion.js";
+import {
+  getMemory,
+  rememberFact,
+  setMemory,
+  updateMemory
+} from "./memory.js";
+import {
   addActivityEvent,
   buildChatPrompt,
   buildNudgePrompt,
@@ -22,11 +36,12 @@ import {
 const ALARM_NAME = "piko-nudge-tick";
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const stored = await chrome.storage.local.get(["settings", "state", "activity", "chat"]);
+  const stored = await chrome.storage.local.get(["settings", "state", "activity", "chat", "memory"]);
   if (!stored.settings) await writeStorage({ settings: DEFAULT_SETTINGS });
   if (!stored.state) await writeStorage({ state: DEFAULT_STATE });
   if (!stored.activity) await writeStorage({ activity: [] });
   if (!stored.chat) await writeStorage({ chat: [] });
+  if (!stored.memory) await getMemory();
   chrome.alarms.create(ALARM_NAME, { delayInMinutes: 1, periodInMinutes: 3 });
 });
 
@@ -122,6 +137,7 @@ async function tickNudge() {
   const state = await getState();
   await closeActiveEvent();
   const activity = await getActivity();
+  const memory = await getMemory();
 
   const candidate = selectNudgeCandidate(settings, state, activity);
   if (!candidate) return;
@@ -129,10 +145,13 @@ async function tickNudge() {
   let text = fallbackNudge(candidate, settings);
   if (settings.aiNudges && settings.apiKey) {
     try {
+      const companionContext = buildCompanionContext(settings, state, activity, memory);
       text = await callGemini({
         apiKey: settings.apiKey,
         model: settings.model,
-        text: buildNudgePrompt(candidate, settings, state, activity),
+        text: settings.companionMode
+          ? buildCompanionNudgePrompt(candidate, companionContext)
+          : buildNudgePrompt(candidate, settings, state, activity, memory),
         temperature: 0.85,
         maxOutputTokens: 80
       });
@@ -163,13 +182,14 @@ async function handleMessage(message) {
   if (!message || !message.type) return { ok: false, error: "Unknown message" };
 
   if (message.type === "PIKO_GET_DASHBOARD") {
-    const [settings, state, activity, chatStore] = await Promise.all([
+    const [settings, state, activity, chatStore, memory] = await Promise.all([
       getSettings(),
       getState(),
       getActivity(),
-      chrome.storage.local.get(["chat"])
+      chrome.storage.local.get(["chat"]),
+      getMemory()
     ]);
-    return { ok: true, settings: redactSettings(settings), state, activity, chat: chatStore.chat || [] };
+    return { ok: true, settings: redactSettings(settings), state, activity, chat: chatStore.chat || [], memory };
   }
 
   if (message.type === "PIKO_SET_GOAL") {
@@ -183,6 +203,11 @@ async function handleMessage(message) {
     if (typeof patch.apiKey === "string") patch.apiKey = patch.apiKey.trim();
     const settings = await setSettings(patch);
     return { ok: true, settings: redactSettings(settings) };
+  }
+
+  if (message.type === "PIKO_SAVE_MEMORY") {
+    const memory = await setMemory(message.patch || {});
+    return { ok: true, memory };
   }
 
   if (message.type === "PIKO_QUIET") {
@@ -202,6 +227,11 @@ async function handleMessage(message) {
     return { ok: true };
   }
 
+  if (message.type === "PIKO_FEEDBACK") {
+    const memory = await recordFeedback(message.feedback);
+    return { ok: true, memory };
+  }
+
   if (message.type === "PIKO_IMPORT_HISTORY") {
     return importHistory(Number(message.hours || 6));
   }
@@ -218,81 +248,139 @@ async function chat(rawText) {
   if (!text) return { ok: false, error: "Empty message" };
 
   const settings = await getSettings();
-  const command = parseCommand(text);
-  if (command) return command;
+  const command = await parseCommand(text);
+  if (command) return persistChatTurn(text, command.reply, command.extra || {});
 
-  const [state, activity, chatStore] = await Promise.all([
+  if (shouldAskForMemory(text)) {
+    const memoryText = extractMemoryText(text);
+    await rememberFact(memoryText, "user");
+    return persistChatTurn(text, memoryText ? `I will remember: ${memoryText}` : "Tell me what to remember after /remember.");
+  }
+
+  const toolIntent = localToolReply(text);
+  if (toolIntent.handled && toolIntent.tool === "search") {
+    const query = toolIntent.query;
+    if (query) await chrome.tabs.create({ url: `https://www.google.com/search?q=${encodeURIComponent(query)}` });
+    return persistChatTurn(text, query ? `I opened a search for: ${query}` : "Tell me what to search after /search.");
+  }
+
+  const [state, activity, memory] = await Promise.all([
     getState(),
     getActivity(),
-    chrome.storage.local.get(["chat"])
+    getMemory()
   ]);
 
   let reply = "Set a Gemini API key in Piko settings first, then I can chat with context.";
   if (settings.apiKey) {
+    const companionContext = buildCompanionContext(settings, state, activity, memory);
     reply = await callGemini({
       apiKey: settings.apiKey,
       model: settings.model,
-      text: buildChatPrompt(text, settings, state, activity),
+      text: settings.companionMode
+        ? buildCompanionPrompt(toolIntent.cleaned || text, companionContext)
+        : buildChatPrompt(text, settings, state, activity, memory),
       temperature: 0.55,
       maxOutputTokens: 260
     });
   }
 
+  return persistChatTurn(text, reply);
+}
+
+async function persistChatTurn(text, reply, extra = {}) {
+  const chatStore = await chrome.storage.local.get(["chat"]);
   const chatItems = [
     ...(chatStore.chat || []),
     { role: "user", text, at: now() },
     { role: "piko", text: reply, at: now() }
   ].slice(-40);
   await chrome.storage.local.set({ chat: chatItems });
-  return { ok: true, reply, chat: chatItems };
+  return { ok: true, reply, chat: chatItems, ...extra };
 }
 
-function parseCommand(text) {
+async function parseCommand(text) {
   const lower = text.toLowerCase();
   if (lower.startsWith("/goal ")) {
     const goal = text.slice(6).trim();
-    return setSettings({ currentGoal: goal, goalUpdatedAt: goal ? now() : 0 }).then((settings) => ({
+    const settings = await setSettings({ currentGoal: goal, goalUpdatedAt: goal ? now() : 0 });
+    return {
       ok: true,
       reply: goal ? `Goal set: ${goal}` : "Goal cleared.",
       settings: redactSettings(settings)
-    }));
+    };
   }
 
   if (lower === "/goal") {
-    return getSettings().then((settings) => ({
+    const settings = await getSettings();
+    return {
       ok: true,
       reply: settings.currentGoal ? `Current goal: ${settings.currentGoal}` : "No goal set yet. Try /goal finish the report.",
       settings: redactSettings(settings)
-    }));
+    };
+  }
+
+  if (lower === "/done") {
+    const settings = await setSettings({ currentGoal: "", goalUpdatedAt: 0 });
+    await updateMemory((memory) => {
+      memory.stats.goalsDone += 1;
+      memory.piko.mood = "proud";
+      memory.piko.energy = Math.min(100, memory.piko.energy + 8);
+      return memory;
+    });
+    return { ok: true, reply: "Done. Piko is proud of this one.", settings: redactSettings(settings) };
   }
 
   if (lower === "/pause" || lower === "/sleep") {
-    return setSettings({ quietUntil: now() + 60 * 60 * 1000 }).then((settings) => ({
+    const settings = await setSettings({ quietUntil: now() + 60 * 60 * 1000 });
+    await recordFeedback("slept");
+    return {
       ok: true,
       reply: "Piko is sleeping for 1 hour.",
       settings: redactSettings(settings)
-    }));
+    };
   }
 
   if (lower.startsWith("/sleep ")) {
     const minutesMatch = lower.match(/\/sleep\s+(\d+)/);
     const minutesValue = minutesMatch ? Math.max(5, Math.min(Number(minutesMatch[1]), 480)) : 60;
-    return setSettings({ quietUntil: now() + minutesValue * 60 * 1000 }).then((settings) => ({
+    const settings = await setSettings({ quietUntil: now() + minutesValue * 60 * 1000 });
+    await recordFeedback("slept");
+    return {
       ok: true,
       reply: `Piko is sleeping for ${minutesValue} minutes.`,
       settings: redactSettings(settings)
-    }));
+    };
   }
 
   if (lower === "/resume" || lower === "/wake") {
-    return setSettings({ quietUntil: 0 }).then((settings) => ({
+    const settings = await setSettings({ quietUntil: 0 });
+    return {
       ok: true,
       reply: "Piko is back.",
       settings: redactSettings(settings)
-    }));
+    };
   }
 
   return null;
+}
+
+async function recordFeedback(feedback) {
+  const key = ["helpful", "tooMuch", "dismissed", "slept"].includes(feedback) ? feedback : "dismissed";
+  return updateMemory((memory) => {
+    memory.stats[key] += 1;
+    if (key === "helpful") {
+      memory.piko.trust = Math.min(100, memory.piko.trust + 2);
+      memory.piko.mood = "focused";
+    }
+    if (key === "tooMuch") {
+      memory.piko.trust = Math.max(0, memory.piko.trust - 2);
+      memory.piko.mood = "careful";
+    }
+    if (key === "slept") {
+      memory.piko.mood = "sleepy";
+    }
+    return memory;
+  });
 }
 
 async function importHistory(hours) {

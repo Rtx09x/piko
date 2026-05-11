@@ -9,8 +9,11 @@ Set a goal, browse normally, and Piko gives gentle nudges when your tabs start d
 - Goal-based focus nudges
 - Small page overlay
 - Gemini-powered chat
+- Finite local memory with compaction
+- Personalization for your name, preferences, and Piko's personality
 - Local browser activity context
 - Sleep and wake controls
+- Nudge feedback so Piko can back off or learn what helps
 - Optional recent history import
 - Allowed and blocked domain controls
 - Local-first settings and activity storage
@@ -46,6 +49,11 @@ Use these in Piko chat:
 /sleep
 /sleep 20
 /wake
+/done
+/remember short nudges are best
+/think how should I structure this feature
+/idea UI polish
+/search Chrome extension screenshots
 ```
 
 ## Privacy
