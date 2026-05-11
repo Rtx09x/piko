@@ -1,0 +1,145 @@
+#piko-root {
+  all: initial;
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2147483647;
+  font-family: Aptos, "Geist", "Helvetica Neue", ui-sans-serif, sans-serif;
+}
+
+#piko-root * {
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.piko-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  width: min(340px, calc(100vw - 28px));
+  padding: 14px;
+  color: #171c19;
+  background: #fbfbf8;
+  border: 1px solid rgba(23, 28, 25, 0.16);
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(20, 28, 24, 0.1);
+}
+
+.piko-card[hidden] {
+  display: none;
+}
+
+.piko-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.piko-close::before,
+.piko-close::after {
+  content: "";
+  position: absolute;
+  top: 11px;
+  left: 6px;
+  width: 12px;
+  height: 1.5px;
+  background: #59645f;
+}
+
+.piko-close::before {
+  transform: rotate(45deg);
+}
+
+.piko-close::after {
+  transform: rotate(-45deg);
+}
+
+.piko-close:hover {
+  background: rgba(23, 33, 28, 0.08);
+}
+
+.piko-face {
+  width: 42px;
+  height: 42px;
+  margin-top: 4px;
+  border: 1px solid rgba(41, 88, 78, 0.2);
+  border-radius: 10px;
+  background: #cde9db;
+  display: grid;
+  place-items: center;
+}
+
+.piko-face span {
+  width: 20px;
+  height: 10px;
+  border-bottom: 3px solid #24352f;
+  border-radius: 50%;
+  position: relative;
+}
+
+.piko-face span::before,
+.piko-face span::after {
+  content: "";
+  position: absolute;
+  top: -12px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #24352f;
+}
+
+.piko-face span::before {
+  left: 2px;
+}
+
+.piko-face span::after {
+  right: 2px;
+}
+
+.piko-copy {
+  min-width: 0;
+  padding-right: 18px;
+}
+
+.piko-copy strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #17211c;
+}
+
+.piko-copy p {
+  margin: 0;
+  color: #34403a;
+  font-size: 13px;
+  line-height: 1.38;
+}
+
+.piko-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.piko-actions button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(23, 33, 28, 0.15);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #26332d;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.piko-actions button:hover {
+  border-color: rgba(23, 33, 28, 0.32);
+}

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Piko Settings</title>
+    <link rel="stylesheet" href="./ui.css">
+  </head>
+  <body>
+    <main class="options-shell">
+      <header class="settings-head">
+        <div class="brand">
+          <div class="piko-mark" aria-hidden="true"><span></span></div>
+          <div>
+            <h1>Piko settings</h1>
+            <p>Consent, Gemini, and nudge behavior.</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="settings-section">
+        <h2>Gemini</h2>
+        <label for="apiKey">API key</label>
+        <input id="apiKey" type="password" placeholder="Paste your Gemini API key">
+        <label for="model">Model</label>
+        <input id="model" type="text" value="gemini-2.5-flash">
+        <p class="helper">Stored locally in Chrome extension storage. Piko uses direct Gemini REST calls.</p>
+      </section>
+
+      <section class="settings-section">
+        <h2>Behavior</h2>
+        <label class="toggle-row">
+          <input id="enabled" type="checkbox">
+          <span>Piko is enabled</span>
+        </label>
+        <label class="toggle-row">
+          <input id="aiNudges" type="checkbox">
+          <span>Use Gemini to write nudges</span>
+        </label>
+        <label for="nudgeMode">Nudge mode</label>
+        <select id="nudgeMode">
+          <option value="gentle">Gentle</option>
+          <option value="balanced">Balanced</option>
+          <option value="active">Active</option>
+        </select>
+      </section>
+
+      <section class="settings-section">
+        <h2>Privacy</h2>
+        <label for="privacyMode">Stored activity detail</label>
+        <select id="privacyMode">
+          <option value="titles">Titles and domains only</option>
+          <option value="urls">Titles, domains, and URLs</option>
+        </select>
+        <label for="allowedDomains">Allowed domains</label>
+        <textarea id="allowedDomains" rows="4" placeholder="Optional. One domain per line. Empty means all normal websites."></textarea>
+        <label for="blockedDomains">Blocked domains</label>
+        <textarea id="blockedDomains" rows="4" placeholder="One domain per line."></textarea>
+        <div class="inline-actions">
+          <button id="importHistory" class="ghost-button" type="button">Import recent browser history</button>
+        </div>
+        <p class="helper">This asks Chrome for History permission only when clicked. It imports a rough last-six-hours snapshot.</p>
+      </section>
+
+      <div class="settings-actions">
+        <button id="saveSettings" type="button">Save settings</button>
+        <button id="clearActivity" class="ghost-button" type="button">Clear local data</button>
+      </div>
+      <p id="saveStatus" class="helper"></p>
+    </main>
+
+    <script type="module" src="./options.js"></script>
+  </body>
+</html>

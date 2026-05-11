@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Piko</title>
+    <link rel="stylesheet" href="./ui.css">
+  </head>
+  <body class="popup-body">
+    <main class="popup-shell">
+      <header class="topline">
+        <div class="brand">
+          <div class="piko-mark" aria-hidden="true"><span></span></div>
+          <div>
+            <h1>Piko</h1>
+            <p>Tiny focus companion</p>
+          </div>
+        </div>
+        <button id="openOptions" class="ghost-button" type="button">Settings</button>
+      </header>
+
+      <section class="goal-panel">
+        <label for="goalInput">Current goal</label>
+        <div class="goal-row">
+          <input id="goalInput" type="text" placeholder="What are we doing right now?">
+          <button id="saveGoal" type="button">Set</button>
+        </div>
+        <p id="goalMeta">No goal set.</p>
+      </section>
+
+      <section class="sleep-panel" aria-label="Piko sleep controls">
+        <div>
+          <h2 id="sleepTitle">Piko is awake</h2>
+          <p id="sleepMeta">Nudges are allowed when they look useful.</p>
+        </div>
+        <div class="sleep-actions">
+          <button id="sleep20" class="ghost-button" type="button">20m</button>
+          <button id="sleep60" class="ghost-button" type="button">1h</button>
+          <button id="wakeButton" class="ghost-button" type="button" disabled>Wake</button>
+        </div>
+      </section>
+
+      <section class="context-panel" aria-label="Recent browser context">
+        <div class="context-row">
+          <span>Seen</span>
+          <strong id="focusMinutes">0 min</strong>
+        </div>
+        <div class="context-row">
+          <span>Switches</span>
+          <strong id="switchCount">0</strong>
+        </div>
+        <div class="context-row">
+          <span>Top site</span>
+          <strong id="topDomain">none</strong>
+        </div>
+      </section>
+
+      <section class="chat-panel">
+        <div class="panel-title">
+          <h2>Chat</h2>
+          <button id="clearData" class="text-button" type="button">Clear</button>
+        </div>
+        <div id="chatLog" class="chat-log" aria-live="polite"></div>
+        <form id="chatForm" class="chat-form">
+          <input id="chatInput" type="text" placeholder="/goal ship Piko, or ask for a reset">
+          <button type="submit">Send</button>
+        </form>
+      </section>
+
+      <footer class="hint-row">
+        <p id="apiStatus">Gemini key not set</p>
+      </footer>
+    </main>
+
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>

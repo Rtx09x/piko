@@ -1,0 +1,346 @@
+:root {
+  color-scheme: light;
+  --bg: #f6f6f3;
+  --panel: #fffffc;
+  --text: #171c19;
+  --muted: #656f69;
+  --line: rgba(23, 28, 25, 0.14);
+  --soft: #e8eee9;
+  --action: #276755;
+  --action-dark: #1d4b40;
+  --warn: #b46a45;
+  --danger: #8a3f3f;
+  --radius: 10px;
+  --radius-small: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  font-family: Aptos, "Geist", "Helvetica Neue", ui-sans-serif, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--action);
+  border-radius: var(--radius-small);
+  color: #ffffff;
+  background: var(--action);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:hover {
+  background: var(--action-dark);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  color: var(--text);
+  background: #ffffff;
+  outline: none;
+}
+
+input,
+select {
+  min-height: 38px;
+  padding: 0 10px;
+}
+
+textarea {
+  resize: vertical;
+  padding: 10px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(31, 111, 91, 0.75);
+  box-shadow: 0 0 0 3px rgba(31, 111, 91, 0.14);
+}
+
+label {
+  display: block;
+  margin: 12px 0 6px;
+  color: #26332d;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.popup-body {
+  width: 380px;
+}
+
+.popup-shell {
+  padding: 14px;
+}
+
+.topline,
+.settings-head,
+.panel-title,
+.hint-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand h1 {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.brand p,
+.helper,
+.goal-panel p,
+.hint-row p,
+.sleep-panel p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.piko-mark {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(41, 88, 78, 0.2);
+  border-radius: var(--radius);
+  background: #cde9db;
+}
+
+.piko-mark span {
+  width: 20px;
+  height: 10px;
+  border-bottom: 3px solid #24352f;
+  border-radius: 50%;
+  position: relative;
+}
+
+.piko-mark span::before,
+.piko-mark span::after {
+  content: "";
+  position: absolute;
+  top: -12px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #24352f;
+}
+
+.piko-mark span::before {
+  left: 2px;
+}
+
+.piko-mark span::after {
+  right: 2px;
+}
+
+.ghost-button,
+.text-button {
+  color: var(--text);
+  background: transparent;
+  border-color: var(--line);
+}
+
+.ghost-button:hover,
+.text-button:hover {
+  background: rgba(23, 33, 28, 0.06);
+}
+
+.ghost-button:disabled {
+  color: #9ba39e;
+  background: transparent;
+  cursor: default;
+}
+
+.text-button {
+  min-height: 28px;
+  padding: 0 6px;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.goal-panel,
+.chat-panel,
+.settings-section,
+.sleep-panel,
+.context-panel {
+  margin-top: 14px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.goal-row,
+.chat-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.goal-panel p {
+  margin-top: 7px;
+}
+
+.sleep-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.sleep-panel h2 {
+  margin: 0 0 3px;
+  font-size: 14px;
+}
+
+.sleep-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.sleep-actions button {
+  min-width: 46px;
+  padding: 0 8px;
+}
+
+.context-panel {
+  display: grid;
+  gap: 0;
+  margin-top: 10px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.context-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 10px;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.context-row:last-child {
+  border-bottom: 0;
+}
+
+.context-row span {
+  color: var(--muted);
+}
+
+.context-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chat-panel h2,
+.settings-section h2 {
+  font-size: 14px;
+}
+
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 164px;
+  margin: 12px 0;
+  overflow: auto;
+}
+
+.chat-empty {
+  margin: auto;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+}
+
+.message {
+  max-width: 88%;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: #ffffff;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.message.user {
+  align-self: flex-end;
+  color: #ffffff;
+  background: var(--action);
+  border-color: var(--action);
+}
+
+.hint-row {
+  margin-top: 12px;
+}
+
+.options-shell {
+  width: min(720px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 28px 0 40px;
+}
+
+.settings-section {
+  padding: 16px;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggle-row input {
+  width: 18px;
+  min-height: 18px;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.inline-actions {
+  margin-top: 12px;
+}
